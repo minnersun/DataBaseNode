@@ -281,3 +281,94 @@
     )t ORDER BY "timestr"
   </select>
 ```
+
+
+
+### String 与 Blob互相转换
+
+##### Blob转为String输出
+
+> `utl_raw.cast_to_varchar2(dbms_lob.substr(MATERIAL_CONTENT,4000)) AS MATERIAL_CONTENT`
+
+```xml
+    <select id="getProgramMaterialList" resultType="com.wiscom.module.autoGenerate.pojo.ProgramMaterial"
+            resultMap="ProgramMaterial">
+        select
+        PROGRAM_MATERIAL_ID,
+        MATERIAL_ID,
+        MATERIAL_TITLE,
+        MATERIAL_TYPE,
+        utl_raw.cast_to_varchar2(dbms_lob.substr(MATERIAL_CONTENT,4000)) AS MATERIAL_CONTENT,
+        TIME_SPAN,
+        PLAN_TYPE,
+        TIME_PERIOD_ID
+         from PSP_TR_PROGRAM_MATERIAL
+        <if test="timePeriodId!=null">
+            <where>
+                TIME_PERIOD_ID = #{timePeriodId}
+            </where>
+        </if>
+    </select>
+```
+
+##### String转为Blob输入
+
+> `TO_BLOB(UTL_RAW.CAST_TO_RAW(#{materialContent}))`
+
+```xml
+	<insert id="addProgramMaterial">
+
+<!--        <selectKey keyProperty="programMaterialId" order="BEFORE" resultType="java.math.BigDecimal">-->
+<!--            SELECT PSP_TR_PROGRAM_MATERIAL_SEQ.Nextval from DUAL-->
+<!--        </selectKey>-->
+
+        insert into PSP_TR_PROGRAM_MATERIAL
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="materialId!=null">
+                MATERIAL_ID,
+            </if>
+            <if test="materialTitle!=null">
+                MATERIAL_TITLE,
+            </if>
+            <if test="materialType!=null">
+                MATERIAL_TYPE,
+            </if>
+            <if test="materialContent!=null">
+                MATERIAL_CONTENT,
+            </if>
+            <if test="timeSpan!=null">
+                TIME_SPAN,
+            </if>
+            <if test="planType!=null">
+                PLAN_TYPE,
+            </if>
+            <if test="timePeriodId!=null">
+                TIME_PERIOD_ID
+            </if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="materialId!=null">
+                #{materialId},
+            </if>
+            <if test="materialTitle!=null">
+                #{materialTitle},
+            </if>
+            <if test="materialType!=null">
+                #{materialType},
+            </if>
+            <if test="materialContent!=null">
+                TO_BLOB(UTL_RAW.CAST_TO_RAW(#{materialContent})),
+            </if>
+            <if test="timeSpan!=null">
+                #{timeSpan},
+            </if>
+            <if test="planType!=null">
+                #{planType},
+            </if>
+            <if test="timePeriodId!=null">
+                #{timePeriodId}
+            </if>
+        </trim>
+    </insert>
+```
