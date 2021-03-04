@@ -372,3 +372,225 @@
         </trim>
     </insert>
 ```
+
+
+
+### 根据首字母查询
+
+##### 案例
+
+```SQL
+CREATE OR REPLACE FUNCTION FUNC_GETPY(P_NAME IN VARCHAR2) RETURN VARCHAR2 AS
+  V_COMPARE VARCHAR2(100);
+  V_RETURN  VARCHAR2(4000);
+ 
+  FUNCTION F_NLSSORT(P_WORD IN VARCHAR2) RETURN VARCHAR2 AS
+  BEGIN
+    RETURN NLSSORT(P_WORD, 'NLS_SORT=SCHINESE_PINYIN_M');
+  END;
+BEGIN
+  FOR I IN 1 .. LENGTH(P_NAME) LOOP
+    V_COMPARE := F_NLSSORT(SUBSTR(P_NAME, I, 1));
+    IF V_COMPARE >= F_NLSSORT('吖') AND V_COMPARE <= F_NLSSORT('驁') THEN
+      V_RETURN := V_RETURN || 'a';
+    ELSIF V_COMPARE >= F_NLSSORT('八') AND V_COMPARE <= F_NLSSORT('簿') THEN
+      V_RETURN := V_RETURN || 'b';
+    ELSIF V_COMPARE >= F_NLSSORT('嚓') AND V_COMPARE <= F_NLSSORT('錯') THEN
+      V_RETURN := V_RETURN || 'c';
+    ELSIF V_COMPARE >= F_NLSSORT('咑') AND V_COMPARE <= F_NLSSORT('鵽') THEN
+      V_RETURN := V_RETURN || 'd';
+    ELSIF V_COMPARE >= F_NLSSORT('妸') AND V_COMPARE <= F_NLSSORT('樲') THEN
+      V_RETURN := V_RETURN || 'e';
+    ELSIF V_COMPARE >= F_NLSSORT('发') AND V_COMPARE <= F_NLSSORT('猤') THEN
+      V_RETURN := V_RETURN || 'f';
+    ELSIF V_COMPARE >= F_NLSSORT('旮') AND V_COMPARE <= F_NLSSORT('腂') THEN
+      V_RETURN := V_RETURN || 'g';
+    ELSIF V_COMPARE >= F_NLSSORT('妎') AND V_COMPARE <= F_NLSSORT('夻') THEN
+      V_RETURN := V_RETURN || 'h';
+    ELSIF V_COMPARE >= F_NLSSORT('丌') AND V_COMPARE <= F_NLSSORT('攈') THEN
+      V_RETURN := V_RETURN || 'j';
+    ELSIF V_COMPARE >= F_NLSSORT('咔') AND V_COMPARE <= F_NLSSORT('穒') THEN
+      V_RETURN := V_RETURN || 'k';
+    ELSIF V_COMPARE >= F_NLSSORT('垃') AND V_COMPARE <= F_NLSSORT('擽') THEN
+      V_RETURN := V_RETURN || 'l';
+    ELSIF V_COMPARE >= F_NLSSORT('嘸') AND V_COMPARE <= F_NLSSORT('椧') THEN
+      V_RETURN := V_RETURN || 'm';
+    ELSIF V_COMPARE >= F_NLSSORT('拏') AND V_COMPARE <= F_NLSSORT('瘧') THEN
+      V_RETURN := V_RETURN || 'n';
+    ELSIF V_COMPARE >= F_NLSSORT('筽') AND V_COMPARE <= F_NLSSORT('漚') THEN
+      V_RETURN := V_RETURN || 'o';
+    ELSIF V_COMPARE >= F_NLSSORT('妑') AND V_COMPARE <= F_NLSSORT('曝') THEN
+      V_RETURN := V_RETURN || 'p';
+    ELSIF V_COMPARE >= F_NLSSORT('七') AND V_COMPARE <= F_NLSSORT('裠') THEN
+      V_RETURN := V_RETURN || 'q';
+    ELSIF V_COMPARE >= F_NLSSORT('亽') AND V_COMPARE <= F_NLSSORT('鶸') THEN
+      V_RETURN := V_RETURN || 'r';
+    ELSIF V_COMPARE >= F_NLSSORT('仨') AND V_COMPARE <= F_NLSSORT('蜶') THEN
+      V_RETURN := V_RETURN || 's';
+    ELSIF V_COMPARE >= F_NLSSORT('侤') AND V_COMPARE <= F_NLSSORT('籜') THEN
+      V_RETURN := V_RETURN || 't';
+    ELSIF V_COMPARE >= F_NLSSORT('屲') AND V_COMPARE <= F_NLSSORT('鶩') THEN
+      V_RETURN := V_RETURN || 'w';
+    ELSIF V_COMPARE >= F_NLSSORT('夕') AND V_COMPARE <= F_NLSSORT('鑂') THEN
+      V_RETURN := V_RETURN || 'x';
+    ELSIF V_COMPARE >= F_NLSSORT('丫') AND V_COMPARE <= F_NLSSORT('韻') THEN
+      V_RETURN := V_RETURN || 'y';
+    ELSIF V_COMPARE >= F_NLSSORT('帀') AND V_COMPARE <= F_NLSSORT('咗') THEN
+      V_RETURN := V_RETURN || 'z';
+    END IF;
+  END LOOP;
+  RETURN V_RETURN;
+END;
+```
+
+```xml
+    <select id="getSingalCrossList" parameterType="java.lang.String" resultType="java.util.Map">
+        select CROSS_ID "crossId",
+        from PSP_TR_SIGNALCROSS
+        <if test="_parameter != null and _parameter !=''">
+            where CROSS_NAME LIKE #{singalCrossName} or FUNC_GETPY(CROSS_NAME) LIKE #{singalCrossName}
+        </if>
+    </select>
+```
+
+
+
+
+
+### 对查询结果新增临时列排序，一行分为多行
+
+> 临时新增临时排序列
+>
+> > `rownum`
+>
+> 一行分为多行
+>
+> > `select REGEXP_SUBSTR((t2."id"), '[^分隔符吖,]+', 1, ROWNUM) AS "id"`
+> > `CONNECT BY ROWNUM  <= LENGTH(t2."id") - LENGTH(REPLACE(t2."id", '分隔符吖,', '')) + 1`
+
+
+
+```sql
+
+ select t5.* from
+ (
+ select rownum, t4.* from (
+            select REGEXP_SUBSTR((t2."id"), '[^分隔符吖,]+', 1, ROWNUM) AS "id"
+            from
+            (
+            select
+            WM_CONCAT(t1."id") "id",
+            WM_CONCAT(t1."plateClass") "plateClass",
+            WM_CONCAT(t1."className") "className",
+            WM_CONCAT(t1."remarks") "remarks",
+            WM_CONCAT(t1."inputUser") "inputUser",
+            WM_CONCAT(t1."inputUserRealName") "inputUserRealName",
+            WM_CONCAT(t1."inputTime") "inputTime",
+            WM_CONCAT(t1."inputTimeStr") "inputTimeStr",
+            WM_CONCAT(t1."state") "state",
+            WM_CONCAT(t1."approvalUser1") "approvalUser1",
+            WM_CONCAT(t1."approvalUser1RealName") "approvalUser1RealName",
+            WM_CONCAT(t1."approvalTime1") "approvalTime1",
+            WM_CONCAT(t1."approvalTime1Str") "approvalTime1Str",
+            WM_CONCAT(t1."approvalUser2") "approvalUser2",
+            WM_CONCAT(t1."approvalUser2RealName") "approvalUser2RealName",
+            WM_CONCAT(t1."approvalTime2") "approvalTime2",
+            WM_CONCAT(t1."approvalTime2Str") "approvalTime2Str",
+            WM_CONCAT(t1."plateColor") "plateColor",
+            WM_CONCAT(t1."unitName") "unitName",
+            WM_CONCAT(t1."contacrPerson") "contacrPerson",
+            WM_CONCAT(t1."phone") "phone",
+            WM_CONCAT(t1."termOfValidity") "termOfValidity",
+            WM_CONCAT(t1."isAllIllegalType") "isAllIllegalType",
+            WM_CONCAT(t1."illegalType") "illegalType"
+            from
+            (
+            select count(1) num,xmlagg(xmlparse(content TO_CHAR(T1.ID) || '分隔符吖' wellformed) order by T1.ID
+            ).getclobval() "id",
+            xmlagg(xmlparse(content T1.PLATE_CLASS || '分隔符吖' wellformed) order by T1.ID).getclobval() "plateClass",
+            xmlagg(xmlparse(content T2.CLASS_NAME || '分隔符吖' wellformed) order by T1.ID).getclobval() "className",
+            xmlagg(xmlparse(content T1.REMARKS || '分隔符吖' wellformed) order by T1.ID).getclobval() "remarks",
+            xmlagg(xmlparse(content T1.INPUT_USER || '分隔符吖' wellformed) order by T1.ID).getclobval() "inputUser",
+            xmlagg(xmlparse(content T3.REAL_NAME || '分隔符吖' wellformed) order by T1.ID).getclobval() "inputUserRealName",
+            xmlagg(xmlparse(content TO_CHAR(T1.INPUT_TIME,'YYYY-MM-DD') || '分隔符吖' wellformed) order by
+            T1.ID).getclobval() "inputTime",
+            xmlagg(xmlparse(content TO_CHAR(T1.INPUT_TIME,'YYYY-MM-DD HH24:MI:SS') || '分隔符吖' wellformed) order by
+            T1.ID).getclobval() "inputTimeStr",
+            xmlagg(xmlparse(content T1.STATE || '分隔符吖' wellformed) order by T1.ID).getclobval() "state",
+            xmlagg(xmlparse(content T1.APPROVAL_USER1 || '分隔符吖' wellformed) order by T1.ID).getclobval()
+            "approvalUser1",
+            xmlagg(xmlparse(content T4.REAL_NAME || '分隔符吖' wellformed) order by T1.ID).getclobval()
+            "approvalUser1RealName",
+            xmlagg(xmlparse(content T1.APPROVAL_TIME1 || '分隔符吖' wellformed) order by T1.ID).getclobval()
+            "approvalTime1",
+            xmlagg(xmlparse(content TO_CHAR(T1.APPROVAL_TIME1,'YYYY-MM-DD HH24:MI:SS') || '分隔符吖' wellformed) order by
+            T1.ID).getclobval() "approvalTime1Str",
+            xmlagg(xmlparse(content T1.APPROVAL_USER2 || '分隔符吖' wellformed) order by T1.ID).getclobval()
+            "approvalUser2",
+            xmlagg(xmlparse(content T5.REAL_NAME || '分隔符吖' wellformed) order by T1.ID).getclobval()
+            "approvalUser2RealName",
+            xmlagg(xmlparse(content T1.APPROVAL_TIME2 || '分隔符吖' wellformed) order by T1.ID).getclobval()
+            "approvalTime2",
+            xmlagg(xmlparse(content TO_CHAR(T1.APPROVAL_TIME2,'YYYY-MM-DD HH24:MI:SS') || '分隔符吖' wellformed) order by
+            T1.ID).getclobval() "approvalTime2Str",
+            xmlagg(xmlparse(content t1.PLATE_COLOR || '分隔符吖' wellformed) order by T1.ID).getclobval() "plateColor",
+            xmlagg(xmlparse(content t1.UNIT_NAME || '分隔符吖' wellformed) order by T1.ID).getclobval() "unitName",
+            xmlagg(xmlparse(content t1.CONTACR_PERSON || '分隔符吖' wellformed) order by T1.ID).getclobval()
+            "contacrPerson",
+            xmlagg(xmlparse(content t1.PHONE || '分隔符吖' wellformed) order by T1.ID).getclobval() "phone",
+            xmlagg(xmlparse(content TO_CHAR(t1.TERM_OF_VALIDITY,'YYYY-MM-DD HH24:MI:SS') || '分隔符吖' wellformed) order by
+            T1.ID).getclobval() "termOfValidity",
+            xmlagg(xmlparse(content t1.IS_ALL_ILLEGAL_TYPE || '分隔符吖' wellformed) order by T1.ID).getclobval()
+            "isAllIllegalType",
+            xmlagg(xmlparse(content t1.ILLEGAL_TYPE || '分隔符吖' wellformed) order by T1.ID).getclobval() "illegalType",
+
+            T1.PLATE_NO "plateNo"
+            FROM PSP_TR_ILLEGAL_WHITEVEHICLE T1
+            LEFT JOIN PSP_DB_PLATECLASS T2 ON T1.PLATE_CLASS=T2.PLATE_CLASS
+            LEFT JOIN PSP_APP_USER T3 ON T1.INPUT_USER=T3.USER_ID
+            LEFT JOIN PSP_APP_USER T4 ON T1.APPROVAL_USER1=T4.USER_ID
+            LEFT JOIN PSP_APP_USER T5 ON T1.APPROVAL_USER2=T5.USER_ID
+            group by T1.PLATE_NO
+            order by num desc
+            ) t1
+            ) t2
+            CONNECT BY ROWNUM  <= LENGTH(t2."id") - LENGTH(REPLACE(t2."id", '分隔符吖,', '')) + 1
+            ) t3
+            left join
+            (
+            SELECT T1.ID "id",
+            T1.PLATE_NO "plateNo",
+            T1.PLATE_CLASS "plateClass",
+            T2.CLASS_NAME "className",
+            T1.REMARKS "remarks",
+            T1.INPUT_USER "inputUser",
+            T3.REAL_NAME "inputUserRealName",
+            T1.INPUT_TIME "inputTime",
+            TO_CHAR(T1.INPUT_TIME,'YYYY-MM-DD HH24:MI:SS') "inputTimeStr",
+            T1.STATE "state",
+            T1.APPROVAL_USER1 "approvalUser1",
+            T4.REAL_NAME "approvalUser1RealName",
+            T1.APPROVAL_TIME1 "approvalTime1",
+            TO_CHAR(T1.APPROVAL_TIME1,'YYYY-MM-DD HH24:MI:SS') "approvalTime1Str",
+            T1.APPROVAL_USER2 "approvalUser2",
+            T5.REAL_NAME "approvalUser2RealName",
+            T1.APPROVAL_TIME2 "approvalTime2",
+            TO_CHAR(T1.APPROVAL_TIME2,'YYYY-MM-DD HH24:MI:SS') "approvalTime2Str",
+            t1.PLATE_COLOR "plateColor",
+            t1.UNIT_NAME "unitName",
+            t1.CONTACR_PERSON "contacrPerson",
+            t1.PHONE "phone",
+            TO_CHAR(t1.TERM_OF_VALIDITY,'YYYY-MM-DD HH24:MI:SS') "termOfValidity",
+            t1.IS_ALL_ILLEGAL_TYPE "isAllIllegalType",
+            t1.ILLEGAL_TYPE "illegalType"
+            FROM PSP_TR_ILLEGAL_WHITEVEHICLE T1
+            LEFT JOIN PSP_DB_PLATECLASS T2 ON T1.PLATE_CLASS=T2.PLATE_CLASS
+            LEFT JOIN PSP_APP_USER T3 ON T1.INPUT_USER=T3.USER_ID
+            LEFT JOIN PSP_APP_USER T4 ON T1.APPROVAL_USER1=T4.USER_ID
+            LEFT JOIN PSP_APP_USER T5 ON T1.APPROVAL_USER2=T5.USER_ID
+            ) t4
+            on t3."id" = t4."id"
+            where t3."id" is not null						 
+						order by rownum 
+ ) t5
+```
